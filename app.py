@@ -36,7 +36,7 @@ if len(player_data) >= 8:
     slope_rating = player_data['Slope Rating'].iloc[0]
     course_handicap = calculate_course_handicap(handicap_index, course_rating, slope_rating)
     st.write(f"{player}'s Handicap Index: {handicap_index:.2f}")
-    st.write(f'{player}'s Course Handicap: {course_handicap:.2f}')
+    st.write(f"{player}'s Course Handicap: {course_handicap:.2f}")
 else:
     st.write('Not enough scores to calculate handicap.')
 
