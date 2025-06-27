@@ -1,13 +1,11 @@
-import os
 import streamlit as st
 import pandas as pd
 import requests
 import json
+import os
 from datetime import datetime
 
-
 API_KEY = "JYFJIZ5QHLC6QLMFAO6FJFSVXM"
-
 API_URL = "https://golfcourseapi.com/api/v1/courses/search"
 DATA_FILE = "golf_scores.json"
 
@@ -39,9 +37,18 @@ def search_courses(query):
     headers = {"Authorization": f"Key {API_KEY}"}
     params = {"q": query, "country": "GB"}
     response = requests.get(API_URL, headers=headers, params=params)
+
+    # Debugging output
+    st.write("🔍 Search Query:", query)
+    st.write("📨 Request Headers:", headers)
+    st.write("📨 Request Parameters:", params)
+    st.write("📬 Response Status Code:", response.status_code)
+    st.write("📬 Response Content:", response.text)
+
     if response.status_code == 200:
         return response.json().get("courses", [])
     return []
+
 
 st.title("Golf Handicap Tracker")
 
