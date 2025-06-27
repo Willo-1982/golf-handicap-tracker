@@ -1,64 +1,83 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+import numpy as np
+import datetime
+import openpyxl
 
-# Load the Excel file
-df = pd.read_excel('golf_handicap_tracker.xlsx')
+# Initialize session state for players and scores
+if 'players' not in st.session_state:
+    st.session_state.players = {}
+if 'scores' not in st.session_state:
+    st.session_state.scores = []
 
 # Function to calculate handicap index
 def calculate_handicap_index(scores):
+    if len(scores) < 8:
+        return None
     scores = sorted(scores)[:8]
-    return sum(scores) / len(scores)
+    return np.mean(scores)
 
 # Function to calculate course handicap
 def calculate_course_handicap(handicap_index, course_rating, slope_rating):
-    return (handicap_index - course_rating) * (113 / slope_rating)
+    return (handicap_index - course_rating) * 113 / slope_rating
 
-# Streamlit app
+# Title
 st.title('Golf Handicap Tracker')
 
-# Player selection
-player = st.selectbox('Select Player', df['Player'].unique())
+# Add new player
+with st.form(key='add_player'):
+    st.header('Add New Player')
+    player_name = st.text_input('Player Name')
+    submit_player = st.form_submit_button('Add Player')
+    if submit_player and player_name:
+        st.session_state.players[player_name] = []
+        st.success(f'Player {player_name} added!')
 
-# Filter data for the selected player
-player_data = df[df['Player'] == player]
-
-# Display player data
-st.write('Player Data:')
-st.dataframe(player_data)
-
-# Calculate and display handicap
-if len(player_data) >= 8:
-    scores = player_data['Score'].tolist()
-    handicap_index = calculate_handicap_index(scores)
-    course_rating = player_data['Course Rating'].iloc[0]
-    slope_rating = player_data['Slope Rating'].iloc[0]
-    course_handicap = calculate_course_handicap(handicap_index, course_rating, slope_rating)
-    st.write(f"{player}'s Handicap Index: {handicap_index:.2f}")
-    st.write(f"{player}'s Course Handicap: {course_handicap:.2f}")
-else:
-    st.write('Not enough scores to calculate handicap.')
+# Select player
+player = st.selectbox('Select Player', list(st.session_state.players.keys()))
 
 # Add new score
-st.write('Add New Score:')
-new_score = st.number_input('Score', min_value=0)
-new_date = st.date_input('Date', value=datetime.now())
-new_course = st.text_input('Course', value='St Andrews')
-new_tee = st.selectbox('Tee', ['White', 'Yellow', 'Red'])
-new_course_rating = st.number_input('Course Rating', value=72.0)
-new_slope_rating = st.number_input('Slope Rating', value=123)
+with st.form(key='add_score'):
+    st.header('Add New Score')
+    score = st.number_input('Score', min_value=0)
+    course_rating = st.number_input('Course Rating', min_value=0.0)
+    slope_rating = st.number_input('Slope Rating', min_value=0)
+    date = st.date_input('Date', value=datetime.date.today())
+    submit_score = st.form_submit_button('Add Score')
+    if submit_score and player:
+        st.session_state.scores.append({
+            'Player': player,
+            'Score': score,
+            'Course Rating': course_rating,
+            'Slope Rating': slope_rating,
+            'Date': date
+        })
+        st.success(f'Score added for {player}!')
 
-if st.button('Add Score'):
-    new_data = {
-        'Player': player,
-        'Course': new_course,
-        'Tee': new_tee,
-        'Score': new_score,
-        'Date': new_date,
-        'Course Rating': new_course_rating,
-        'Slope Rating': new_slope_rating
-    }
-    df = df.append(new_data, ignore_index=True)
-    df.to_excel('golf_handicap_tracker.xlsx', index=False)
-    st.success('Score added successfully!')
+# Display scores
+st.header('Scores')
+if player:
+    player_scores = [s for s in st.session_state.scores if s['Player'] == player]
+    if player_scores:
+        df = pd.DataFrame(player_scores)
+        st.dataframe(df)
+        handicap_index = calculate_handicap_index(df['Score'].tolist())
+        if handicap_index is not None:
+            st.write(f'Handicap Index: {handicap_index:.2f}')
+            course_handicap = calculate_course_handicap(handicap_index, course_rating, slope_rating)
+            st.write(f'Course Handicap: {course_handicap:.2f}')
+        else:
+            st.write('Not enough scores to calculate handicap index.')
+    else:
+        st.write('No scores available for this player.')
+
+# Export to Excel
+if st.button('Export to Excel'):
+    with pd.ExcelWriter('golf_handicap_tracker.xlsx', engine='openpyxl') as writer:
+        for player in st.session_state.players.keys():
+            player_scores = [s for s in st.session_state.scores if s['Player'] == player]
+            if player_scores:
+                df = pd.DataFrame(player_scores)
+                df.to_excel(writer, sheet_name=player, index=False)
+    st.success('Data exported to golf_handicap_tracker.xlsx')
