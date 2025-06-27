@@ -5,9 +5,9 @@ import requests
 import json
 from datetime import datetime
 
-API_KEY = "JYFJIZ5QHLC6QLMFAO6FJFSVXM"
+
 API_URL = "https://golfcourseapi.com/api/v1/courses/search"
-headers = {"Authorization: Key JYFJIZ5QHLC6QLMFAO6FJFSVXM"}
+headers = {"Authorization": "Key JYFJIZ5QHLC6QLMFAO6FJFSVXM"}
 DATA_FILE = "golf_scores.json"
 
 def load_data():
