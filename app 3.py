@@ -36,7 +36,7 @@ def calculate_course_handicap(handicap_index, slope_rating):
     return round(handicap_index * slope_rating / 113, 2)
 
 def search_courses(query):
-    headers = {"Authorization: Key {API_KEY}"}
+    headers = {"Authorization": f"Key {API_KEY}"}
     params = {"q": query, "country": "GB"}
     response = requests.get(API_URL, headers=headers, params=params)
     if response.status_code == 200:
