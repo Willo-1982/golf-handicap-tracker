@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import requests
@@ -6,7 +7,6 @@ from datetime import datetime
 
 API_KEY = "JYFJIZ5QHLC6QLMFAO6FJFSVXM"
 API_URL = "https://golfcourseapi.com/api/v1/courses/search"
-
 DATA_FILE = "golf_scores.json"
 
 def load_data():
@@ -90,12 +90,19 @@ if player:
         st.info("At least 8 scores are required to calculate handicap index.")
 
     st.subheader("Add New Score")
-    course_query = st.text_input("Search UK Golf Course")
-    course_options = search_courses(course_query) if course_query else []
-    course_names = [c['name'] for c in course_options]
-    selected_course_name = st.selectbox("Select Course", course_names) if course_names else None
 
-    selected_course = next((c for c in course_options if c['name'] == selected_course_name), None)
+    course_query = st.text_input("Search UK Golf Course")
+    selected_course_name = None
+    selected_course = None
+
+    if course_query and len(course_query) >= 3:
+        course_options = search_courses(course_query)
+        course_names = [c['name'] for c in course_options]
+        selected_course_name = st.selectbox("Matching Courses", course_names) if course_names else None
+        selected_course = next((c for c in course_options if c['name'] == selected_course_name), None)
+    else:
+        st.info("Start typing a course name (min 3 characters)...")
+
     tee_options = selected_course.get("tees", []) if selected_course else []
     tee_names = [t['name'] for t in tee_options]
     selected_tee = st.selectbox("Select Tee", tee_names) if tee_names else None
@@ -122,6 +129,8 @@ if player:
         save_data(data)
         st.success("Score added.")
         st.experimental_rerun()
+
+
 
 
 
